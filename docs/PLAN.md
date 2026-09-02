@@ -2,7 +2,7 @@
 
 corvid-cpp is the **C++ binding** for the `corvid` embedded database's
 FFI: a header-first RAII library over the frozen C ABI (engine
-`crates/corvid-ffi/corvid.h`, v0.3.1, 124 symbols), with the golden
+`crates/corvid-ffi/corvid.h`, v0.3.2, 124 symbols), with the golden
 suite as its correctness floor and the published release artifacts as
 its only engine dependency.
 
@@ -14,7 +14,7 @@ never vendored).
 Inherited from the bindings program's master plan and non-negotiable:
 
 > **A binding opens with the golden-suite port.** The engine's golden
-> fixtures (267 executable lines across 8 files at v0.3.1) are the
+> fixtures (267 executable lines across 8 files at v0.3.2) are the
 > contract; a binding that wraps the ABI before it can replay the
 > contract is building on unverified ground. No ergonomic sugar ships
 > until the port is green against a tagged release's published
@@ -23,9 +23,9 @@ Inherited from the bindings program's master plan and non-negotiable:
 Concretely: corvid-cpp's first substantive deliverable is
 `test/golden.cpp` — the C++ port of the engine's `c/smoke.c` harness at
 the pinned tag — driven against the **downloaded** libcorvid from the
-v0.3.1 GitHub release, including the v0.3.0 additive OPs (VMAP_KEYS /
+v0.3.2 GitHub release, including the v0.3.0 additive OPs (VMAP_KEYS /
 GET_KEYS over `corvid_value_map_keys`, PHRASE / PHRASE_K0 over
-`corvid_phrase_search`; v0.3.1 was a header-only portability fix — the
+`corvid_phrase_search`; v0.3.2 was a header-only portability fix — the
 golden fixtures are byte-identical across the two tags). Only with
 that green in CI does the RAII
 library's own surface count for anything (`test/raii.cpp` proves it).
@@ -81,7 +81,7 @@ beyond the C++ standard library and the engine cdylib:
   (Ubuntu 24.04 LTS system CMake), CI on latest-ish GCC, Clang, and
   MSVC across linux/macos/windows.
 
-### The C-header-under-C++ note (historical; resolved at v0.3.1)
+### The C-header-under-C++ note (historical; resolved at v0.3.2)
 
 The published `corvid.h` is a C header by contract. Through v0.3.0 its
 enum idiom — `enum corvid_status` plus, for pre-C23 compilers,
@@ -95,11 +95,11 @@ typedef), which is plain valid C++. The trick was scoped to the single
 (`src/corvid.cpp`, `test/golden.cpp`, `test/errcodes.cpp`) and restored
 immediately after.
 
-**Resolved:** the engine shipped the portable header in **v0.3.1** — the
+**Resolved:** the engine shipped the portable header in **v0.3.2** — the
 generated enums are the plain `typedef enum <tag> { ... } <tag>;` the
 spec shows, valid C11, C23, and every C++ standard (found by this
 binding; engine CHANGELOG 0.3.1). Per the plan of record, this bump
-commit (the pin's move to v0.3.1) DELETED the prelude and its twins in
+commit (the pin's move to v0.3.2) DELETED the prelude and its twins in
 `test/golden.cpp` / `test/errcodes.cpp` rather than carrying dead code;
 the `extern "C"` wrappers stay (the header carries no `__cplusplus`
 self-guard). The v0.3.0-era idiom lives on only in this note as history.
@@ -107,7 +107,7 @@ self-guard). The v0.3.0-era idiom lives on only in this note as history.
 ## Binding rules (from the master plan)
 
 - **Pin EXACT engine tags.** One engine version at a time; today it is
-  `v0.3.1`. The pin lives in exactly one variable per fetch script
+  `v0.3.2`. The pin lives in exactly one variable per fetch script
   (`CORVID_VERSION`) and is stamped into `deps/version.txt`; CMake
   reads the stamp, never guesses.
 - **Artifacts come from the tag's GitHub release**, not from a local
@@ -132,11 +132,11 @@ self-guard). The v0.3.0-era idiom lives on only in this note as history.
    (matching corvid's copyright line), `.gitignore` (`build/`, `deps/`).
 3. **Fetch + verify** — `fetch.sh` / `fetch.ps1` (founding pin v0.3.0,
    the first release carrying the additive ABI: map keys + phrase
-   search; now v0.3.1, byte-identical fixtures).
+   search; now v0.3.2, byte-identical fixtures).
 4. **The library** — `include/corvid/corvid.hpp` + `src/corvid.cpp`
    per the architecture ruling, packaged for CMake consumption
    (`corvid::corvid` target; FetchContent or find_package).
-5. **The golden port** — `test/golden.cpp` replays the v0.3.1 fixture
+5. **The golden port** — `test/golden.cpp` replays the v0.3.2 fixture
    grammar (`OP<TAB>args<TAB>expected`) over every executable line of
    the release's `golden/*.txt` — 267 lines across 8 files, including
    the new VMAP_KEYS/GET_KEYS and PHRASE/PHRASE_K0 ops — with the same
@@ -174,7 +174,7 @@ the *artifacts* from the engine repo is a finding for the engine repo.
 ## Versioning
 
 The engine pin lives in one variable in the fetch scripts
-(`CORVID_VERSION=v0.3.1`). Bumps are a one-variable change plus a
+(`CORVID_VERSION=v0.3.2`). Bumps are a one-variable change plus a
 re-run of the golden suite against the new artifacts; `bump.sh` in the
 engine's `scripts/bindings/` registry opens the bump PR mechanically
 (this repo is registered there).
