@@ -1,0 +1,125 @@
+# ci — the C++ binding gate.
+#
+# Per platform: fetch + sha256-verify the pinned release artifacts,
+# build offline against deps/, run the golden-suite port (one ctest per
+# fixture, 267 executable lines total), the RAII unit tests, the
+# compile-time error-code tables, and the examples tour (six runnable
+# programs — quickstart, hybrid, vector-index, text-search incl. CJK +
+# phrase, graph, geo — each also a ctest). A Linux sanitizer job builds
+# everything with ASan+UBSan+LSan — every RAII wrapper frees its handle
+# on its creation path and the golden harness frees every ABI handle,
+# so the expectation is zero leaks.
+#
+# Toolchain policy (engine scripts/bindings/README.md): C++20 floor,
+# latest-ish compilers — the matrix exercises GCC and Clang on Linux,
+# AppleClang on macOS, and MSVC on Windows; every leg is required-green.
+
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: ubuntu-x86_64-gcc
+            os: ubuntu-latest
+          - name: ubuntu-x86_64-clang
+            os: ubuntu-latest
+            cmake-flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+          - name: windows-x86_64-msvc
+            os: windows-latest
+          - name: macos-arm64
+            os: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Fetch + verify engine artifacts (sha256)
+        if: runner.os != 'Windows'
+        run: ./fetch.sh
+
+      - name: Fetch + verify engine artifacts (sha256)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./fetch.ps1
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release ${{ matrix.cmake-flags }}
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Golden suite + raii + errcodes + examples (ctest)
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Run the examples tour
+        shell: bash
+        run: |
+          for ex in quickstart hybrid vector_index text_search graph geo; do
+            echo "== example_${ex} =="
+            if [ "$RUNNER_OS" = "Windows" ]; then
+              ./build/bin/Release/example_${ex}.exe
+            else
+              ./build/bin/example_${ex}
+            fi
+          done
+
+  sanitizer:
+    # ASan + UBSan + LSan on Linux: the golden port, the RAII tests, and
+    # the examples tour must run leak-free (every handle freed on its
+    # creation path — the same zero-leak expectation the engine's
+    # sanitized smoke run has).
+    name: sanitizer (linux, asan+lsan)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Fetch + verify engine artifacts (sha256)
+        run: ./fetch.sh
+
+      - name: Configure (sanitized)
+        run: >
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
+          -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Golden suite + tests + examples under sanitizers
+        run: ctest --test-dir build --output-on-failure
+
+  surface-gate:
+    # docs/SURFACE.tsv vs the engine's surface list at the PINNED tag:
+    # every engine construct mapped (binding api + proving test) or N/A
+    # with a reason; N/A count pinned to the committed baseline.
+    name: surface gate (SURFACE.tsv vs pinned engine)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Resolve docs/SURFACE.tsv against the pinned engine surface
+        run: ./scripts/surface-gate.sh
+
+  idiom-gate:
+    # The C++ OOP-idiom radar: no raw ABI tokens in the public header
+    # (RAII-only surface); move-only wrappers pinned by raii.cpp's
+    # static_asserts in the build matrix above.
+    name: idiom gate (no raw ABI in the public header)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Scan the public header for ABI surface
+        run: ./scripts/idiom-gate.sh

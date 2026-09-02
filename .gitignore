@@ -1,0 +1,5 @@
+# Build trees
+build*/
+
+# Downloaded engine artifacts (fetch.sh / fetch.ps1 populate this)
+deps/

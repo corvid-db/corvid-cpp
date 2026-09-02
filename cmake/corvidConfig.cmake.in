@@ -1,0 +1,56 @@
+# corvidConfig.cmake — the find_package(corvid) entry point.
+#
+# Hand-written on purpose: the library's build-time dependency on the
+# engine cdylib is an IMPORTED target living in the binding repo's build
+# tree (consumed from deps/), which CMake's export machinery cannot
+# carry. An installed package instead defines the same two targets
+# against the installed layout:
+#
+#   corvid::engine — the engine shared library (imported; the corvid.h
+#                    that generated the ABI ships in include/corvid/abi)
+#   corvid::corvid — the C++20 RAII static library + public headers,
+#                    linking corvid::engine
+#
+# Either target may be linked; corvid::corvid is the one consumers want.
+
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/corvidConfigVersion.cmake" OPTIONAL)
+include(CMakeFindDependencyMacro)
+
+if(NOT TARGET corvid::engine)
+    add_library(corvid::engine SHARED IMPORTED)
+    if(WIN32)
+        set(_corvid_engine_lib "${PACKAGE_PREFIX_DIR}/bin/corvid.dll")
+        set(_corvid_engine_implib "${PACKAGE_PREFIX_DIR}/lib/corvid.dll.lib")
+        set_target_properties(corvid::engine PROPERTIES
+            IMPORTED_LOCATION "${_corvid_engine_lib}"
+            IMPORTED_IMPLIB "${_corvid_engine_implib}")
+    elseif(APPLE)
+        set_target_properties(corvid::engine PROPERTIES
+            IMPORTED_LOCATION "${PACKAGE_PREFIX_DIR}/lib/libcorvid.dylib")
+    else()
+        set_target_properties(corvid::engine PROPERTIES
+            IMPORTED_LOCATION "${PACKAGE_PREFIX_DIR}/lib/libcorvid.so")
+    endif()
+endif()
+
+if(NOT TARGET corvid::corvid)
+    # The static library's on-disk name is platform-shaped; accept either.
+    find_library(CORVIDPP_LIBRARY
+        NAMES corvidpp libcorvidpp
+        PATHS "${PACKAGE_PREFIX_DIR}/lib"
+        NO_DEFAULT_PATH)
+    if(NOT CORVIDPP_LIBRARY)
+        set(CORVIDPP_LIBRARY_NOTFOUND "corvidpp static library not found under ${PACKAGE_PREFIX_DIR}/lib")
+    endif()
+
+    add_library(corvid::corvid STATIC IMPORTED)
+    set_target_properties(corvid::corvid PROPERTIES
+        IMPORTED_LOCATION "${CORVIDPP_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${PACKAGE_PREFIX_DIR}/include"
+        INTERFACE_LINK_LIBRARIES corvid::engine)
+    set_property(TARGET corvid::corvid PROPERTY INTERFACE_CXX_STANDARD 20)
+endif()
+
+check_required_components(corvid)
