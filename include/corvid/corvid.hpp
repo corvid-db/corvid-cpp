@@ -705,7 +705,15 @@ public:
     std::size_t len();
     /// Full scan; return false from the callback to stop early.
     void scan(std::function<bool(std::string_view key, ValueView doc)> fn);
-    /// Keyset pagination after `after` (nullopt = from the start).
+    /// Keyset pagination strictly after `after` (ABI §4.9). `nullopt` is
+    /// the ONLY start form — it begins at the very first key, the legal
+    /// empty key `""` included; a valued `after` of ANY length — including
+    /// the empty string, the zero-length cursor a page boundary on `""`
+    /// produces — continues strictly after it (feed `Page::next` back; a
+    /// re-walk never restarts). Caveat: build the optional from
+    /// `Page::next` or a `std::string`-backed view — a default-constructed
+    /// `std::string_view{}` has `data() == nullptr`, which reads as START,
+    /// not as the empty cursor.
     Page page(std::optional<std::string_view> after, std::size_t limit);
     /// DIRECT positional (phrase) text search — no query builder. The
     /// phrase must appear as a consecutive, in-order run of analyzed
