@@ -27,30 +27,19 @@
 #include <new>
 #include <utility>
 
-// The published corvid.h is a C header by contract, and its enum idiom
-// needs help under C++: for pre-C23 compilers it emits BOTH
-// `enum corvid_status` and `typedef uint32_t corvid_status` — two types
-// under one name, which C++ rejects (in C they live in different
-// namespaces). Presenting C23 to the preprocessor selects the header's
-// fixed-underlying-type branch (`enum X : uint32_t` + a same-name
-// typedef), which is plain valid C++ — so the published artifact
-// compiles VERBATIM, unpatched (docs/PLAN.md: artifacts are findings,
-// never edits). The C-standard wrappers above are pre-included so the
-// engine header's own includes resolve to already-seen no-ops inside
-// the extern "C" block. Scoped to this one include, restored after.
-#if defined(__cplusplus) && !defined(__STDC_VERSION__)
-#define CORVIDPP_PRESENTED_STDC 1
-#define __STDC_VERSION__ 202311L
-#endif
-
+// The published corvid.h (v0.3.1+) is portable C11/C++ — its enums are
+// the plain `typedef enum <tag> { ... } <tag>;` shape, valid under every
+// C and C++ standard, so it compiles here VERBATIM, unpatched. The
+// v0.3.0-era C23-presenting prelude this TU carried (present __STDC_VERSION__
+// to select the header's fixed-underlying-type branch) became dead code at
+// that tag and is deleted here per docs/PLAN.md's plan of record. The
+// extern "C" wrapper stays: the engine header is a C header by contract
+// and carries no __cplusplus self-guard. The C-standard wrappers above
+// are pre-included so the engine header's own includes resolve to
+// already-seen no-ops inside the extern "C" block.
 extern "C" {
 #include "corvid.h"
 }
-
-#ifdef CORVIDPP_PRESENTED_STDC
-#undef __STDC_VERSION__
-#undef CORVIDPP_PRESENTED_STDC
-#endif
 
 namespace corvid {
 namespace {

@@ -23,9 +23,11 @@ Inherited from the bindings program's master plan and non-negotiable:
 Concretely: corvid-cpp's first substantive deliverable is
 `test/golden.cpp` — the C++ port of the engine's `c/smoke.c` harness at
 the pinned tag — driven against the **downloaded** libcorvid from the
-v0.3.1 GitHub release, including the v0.3.1 additive OPs (VMAP_KEYS /
+v0.3.1 GitHub release, including the v0.3.0 additive OPs (VMAP_KEYS /
 GET_KEYS over `corvid_value_map_keys`, PHRASE / PHRASE_K0 over
-`corvid_phrase_search`). Only with that green in CI does the RAII
+`corvid_phrase_search`; v0.3.1 was a header-only portability fix — the
+golden fixtures are byte-identical across the two tags). Only with
+that green in CI does the RAII
 library's own surface count for anything (`test/raii.cpp` proves it).
 
 ## Architecture ruling (binding-specific)
@@ -54,7 +56,7 @@ beyond the C++ standard library and the engine cdylib:
   initializer-list literals (`Value::map({{"k", v}, ...})`,
   `Value::array({...})`); typed accessors returning `std::optional` /
   `std::span`; borrowed children through the read-only `ValueView`;
-  and **`map_keys()`** — the v0.3.1 additive symbol — returning owned
+  and **`map_keys()`** — the v0.3.0 additive symbol — returning owned
   keys in ascending key-byte order.
 - **Predicate builders** (`corvid::pred::eq/ne/…`, `all/any/none`)
   returning the move-only `Predicate`; consumption follows the ABI
@@ -79,29 +81,28 @@ beyond the C++ standard library and the engine cdylib:
   (Ubuntu 24.04 LTS system CMake), CI on latest-ish GCC, Clang, and
   MSVC across linux/macos/windows.
 
-### The C-header-under-C++ note
+### The C-header-under-C++ note (historical; resolved at v0.3.1)
 
-The published `corvid.h` is a C header by contract. Its enum idiom —
-`enum corvid_status` plus, for pre-C23 compilers, `typedef uint32_t
-corvid_status` — is two types under one name, which C++ rejects (in C
-they live in different namespaces). The fix is not an artifact patch
-(see the rules below) but presentation: presenting C23 to the header's
-preprocessor selects its fixed-underlying-type branch (`enum X :
-uint32_t` + a same-name typedef), which is plain valid C++. The trick
-is scoped to the single `#include "corvid.h"` in each of the three ABIs
-touching TUs (`src/corvid.cpp`, `test/golden.cpp`, `test/errcodes.cpp`)
-and restored immediately after.
+The published `corvid.h` is a C header by contract. Through v0.3.0 its
+enum idiom — `enum corvid_status` plus, for pre-C23 compilers,
+`typedef uint32_t corvid_status` — was two types under one name, which
+C++ rejects (in C they live in different namespaces). The workaround was
+not an artifact patch (see the rules below) but presentation: a
+preprocessor prelude presenting C23 to the header selected its
+fixed-underlying-type branch (`enum X : uint32_t` + a same-name
+typedef), which is plain valid C++. The trick was scoped to the single
+`#include "corvid.h"` in each of the three ABI-touching TUs
+(`src/corvid.cpp`, `test/golden.cpp`, `test/errcodes.cpp`) and restored
+immediately after.
 
-**The prelude's removal is already scheduled:** the engine shipped the
-portable header in **v0.3.1** — the generated enums are the plain
-`typedef enum <tag> { ... } <tag>;` the spec shows, valid C11, C23, and
-every C++ standard (found by this binding; engine CHANGELOG 0.3.1).
-Plan of record: when the pin bumps to v0.3.1 or later, the
-C23-presenting prelude becomes dead code — a header that no longer
-branches on `__STDC_VERSION__` ignores it — so that same bump commit
-DELETES the prelude (and its twins in `test/golden.cpp` /
-`test/errcodes.cpp`) rather than carrying it as a vestige. Until the
-bump, it stays: the v0.3.1 artifact still needs it.
+**Resolved:** the engine shipped the portable header in **v0.3.1** — the
+generated enums are the plain `typedef enum <tag> { ... } <tag>;` the
+spec shows, valid C11, C23, and every C++ standard (found by this
+binding; engine CHANGELOG 0.3.1). Per the plan of record, this bump
+commit (the pin's move to v0.3.1) DELETED the prelude and its twins in
+`test/golden.cpp` / `test/errcodes.cpp` rather than carrying dead code;
+the `extern "C"` wrappers stay (the header carries no `__cplusplus`
+self-guard). The v0.3.0-era idiom lives on only in this note as history.
 
 ## Binding rules (from the master plan)
 
@@ -129,9 +130,9 @@ bump, it stays: the v0.3.1 artifact still needs it.
 1. **Plan doc** (this file) — the binding's own program, written first.
 2. **Repo scaffold** — README (role, usage, requirements), MIT LICENSE
    (matching corvid's copyright line), `.gitignore` (`build/`, `deps/`).
-3. **Fetch + verify** — `fetch.sh` / `fetch.ps1` pinned to `v0.3.1`
-   (the first release carrying the additive ABI: map keys + phrase
-   search).
+3. **Fetch + verify** — `fetch.sh` / `fetch.ps1` (founding pin v0.3.0,
+   the first release carrying the additive ABI: map keys + phrase
+   search; now v0.3.1, byte-identical fixtures).
 4. **The library** — `include/corvid/corvid.hpp` + `src/corvid.cpp`
    per the architecture ruling, packaged for CMake consumption
    (`corvid::corvid` target; FetchContent or find_package).

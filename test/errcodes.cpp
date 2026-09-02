@@ -15,26 +15,19 @@
 
 #include <cstdint>
 
-// The shipped ABI header directly (same C23-presenting prelude as
-// src/corvid.cpp and test/golden.cpp): this test pins THAT artifact's
-// table, so it must read the artifact, not a re-declaration.
+// The shipped ABI header directly: this test pins THAT artifact's
+// table, so it must read the artifact, not a re-declaration. The
+// header is portable C11/C++ since v0.3.1 (the C23-presenting prelude
+// this file used to share with src/corvid.cpp and test/golden.cpp is
+// deleted at this pin bump); the extern "C" wrapper stays because the
+// engine header carries no __cplusplus self-guard.
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
-#if !defined(__STDC_VERSION__)
-#define CORVID_ERRCODES_PRESENTED_STDC 1
-#define __STDC_VERSION__ 202311L
-#endif
-
 extern "C" {
 #include "corvid.h"
 }
-
-#ifdef CORVID_ERRCODES_PRESENTED_STDC
-#undef __STDC_VERSION__
-#undef CORVID_ERRCODES_PRESENTED_STDC
-#endif
 
 #include "corvid/corvid.hpp"
 

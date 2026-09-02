@@ -46,13 +46,13 @@
  *   expected vs got.
  */
 
-/* The engine header is a C header by contract (see src/corvid.cpp for
- * the full story): presenting C23 to its preprocessor selects the
- * fixed-underlying-type enum branch, which is plain valid C++ — the
- * published artifact compiles verbatim, unpatched. The system headers
- * are pulled in FIRST, outside the extern "C" block, so the engine
- * header's own C-standard includes resolve to already-seen no-ops
- * instead of reopening C declarations inside the block. */
+/* The engine header (v0.3.1+) is portable C11/C++ — plain typedef enums,
+ * valid under every C and C++ standard — so it compiles here verbatim,
+ * unpatched (the v0.3.0-era C23-presenting prelude is gone, deleted at
+ * the v0.3.1 pin bump per docs/PLAN.md). The system headers are pulled
+ * in FIRST, outside the extern "C" block, so the engine header's own
+ * C-standard includes resolve to already-seen no-ops instead of
+ * reopening C declarations inside the block. */
 #include <math.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -62,19 +62,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if !defined(__STDC_VERSION__)
-#define CORVID_GOLDEN_PRESENTED_STDC 1
-#define __STDC_VERSION__ 202311L
-#endif
-
 extern "C" {
 #include "corvid.h"
 }
-
-#ifdef CORVID_GOLDEN_PRESENTED_STDC
-#undef __STDC_VERSION__
-#undef CORVID_GOLDEN_PRESENTED_STDC
-#endif
 
 #include "corvid.h"
 
