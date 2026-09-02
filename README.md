@@ -17,22 +17,10 @@ harness, run against the downloaded library on every CI leg.
 is canonical — this binding has its own
 [corvid-cpp page](https://corvid-db.github.io/docs/bindings/corvid-cpp/),
 and the [C ABI section](https://corvid-db.github.io/docs/ffi/) documents
-every symbol underneath.
-
-## What's inside
-
-| Path | What it is |
-| --- | --- |
-| `include/corvid/corvid.hpp` | The public header — `corvid::Db`, `Collection`, `Value`, `Predicate`, `Query`, `Rows`, exceptions; C++20, no dependencies beyond the standard library |
-| `src/corvid.cpp` | The single implementation TU where the ABI lives (the header never names it) |
-| `fetch.sh` / `fetch.ps1` | Download the pinned release archive for the host platform, verify against the release's `checksums.txt` (sha256), extract into gitignored `deps/` |
-| `CMakeLists.txt` | Offline-first build consuming `deps/`; builds the library, the examples tour, the golden-suite port; installs a `find_package(corvid)` package |
-| `examples/{quickstart,hybrid,vector_index,text_search,graph,geo}.cpp` | The examples tour — one runnable program per concept (also ctests): the README quickstart, hybrid RRF+MMR, the vector-index families, BM25 incl. CJK + the phrase API, graph + delete cascade, geo radius/bbox/nearest |
-| `test/golden.cpp` | The golden-suite port — replays the engine's 267-line fixture suite (including the v0.3.0 map-keys and phrase ops; byte-identical at v0.4.0) against the downloaded libcorvid |
-| `test/raii.cpp` | The RAII library's unit tests (145 checks): literals, initializer lists, `map_keys`, predicate builders, the fluent query, phrase search, exceptions, move semantics, TTL/graph/geo/schema/admin |
-| `test/errcodes.cpp` | The frozen error-code tables, pinned at compile time (the shipped header's and this library's mirror) |
-| `docs/PLAN.md` | The binding's plan: architecture ruling, binding rules, phase scope |
-| `docs/SURFACE.tsv` | The surface manifest — every engine construct mapped or `N/A` with a reason (CI-gated) |
+every symbol underneath. The public API is one C++20 header —
+`corvid::Db`, `Collection`, `Value`, `Predicate`, `Query`, `Rows`,
+exceptions — with no dependencies beyond the standard library; the ABI
+lives behind it in a single implementation TU the header never names.
 
 ## Quick start
 
