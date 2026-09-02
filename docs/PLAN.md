@@ -25,8 +25,10 @@ Concretely: corvid-cpp's first substantive deliverable is
 the pinned tag — driven against the **downloaded** libcorvid from the
 v0.3.2 GitHub release, including the v0.3.0 additive OPs (VMAP_KEYS /
 GET_KEYS over `corvid_value_map_keys`, PHRASE / PHRASE_K0 over
-`corvid_phrase_search`; v0.3.2 was a header-only portability fix — the
-golden fixtures are byte-identical across the two tags). Only with
+`corvid_phrase_search`; v0.3.1 was a header-only portability fix and
+v0.3.2's corvid_page zero-length-cursor fix is dylib-behavioral with no
+new fixture lines — the golden fixtures are byte-identical across these
+tags). Only with
 that green in CI does the RAII
 library's own surface count for anything (`test/raii.cpp` proves it).
 
@@ -81,7 +83,7 @@ beyond the C++ standard library and the engine cdylib:
   (Ubuntu 24.04 LTS system CMake), CI on latest-ish GCC, Clang, and
   MSVC across linux/macos/windows.
 
-### The C-header-under-C++ note (historical; resolved at v0.3.2)
+### The C-header-under-C++ note (historical; resolved at v0.3.1)
 
 The published `corvid.h` is a C header by contract. Through v0.3.0 its
 enum idiom — `enum corvid_status` plus, for pre-C23 compilers,
@@ -95,11 +97,11 @@ typedef), which is plain valid C++. The trick was scoped to the single
 (`src/corvid.cpp`, `test/golden.cpp`, `test/errcodes.cpp`) and restored
 immediately after.
 
-**Resolved:** the engine shipped the portable header in **v0.3.2** — the
+**Resolved:** the engine shipped the portable header in **v0.3.1** — the
 generated enums are the plain `typedef enum <tag> { ... } <tag>;` the
 spec shows, valid C11, C23, and every C++ standard (found by this
 binding; engine CHANGELOG 0.3.1). Per the plan of record, this bump
-commit (the pin's move to v0.3.2) DELETED the prelude and its twins in
+commit (the pin's move to v0.3.1) DELETED the prelude and its twins in
 `test/golden.cpp` / `test/errcodes.cpp` rather than carrying dead code;
 the `extern "C"` wrappers stay (the header carries no `__cplusplus`
 self-guard). The v0.3.0-era idiom lives on only in this note as history.
