@@ -37,7 +37,7 @@ ENGINE_REPO="corvid-db/corvid"
 # v0.3.0 ABI exposed the phrase half of the direct-search exclusions
 # (Collection::phrase_search is mapped now); the BM25/vector direct fns
 # stay query-builder-only per FFI.md §9.
-NA_BASELINE=147
+NA_BASELINE=151
 
 # ---- locate the engine pin ------------------------------------------------
 pin=""

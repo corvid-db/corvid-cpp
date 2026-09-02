@@ -9,7 +9,7 @@ API (`include/corvid/corvid.hpp`).
 
 The binding links the **published FFI artifacts** — the platform cdylib,
 `corvid.h`, and the golden fixtures shipped in each release archive —
-fetched from a pinned engine release (v0.3.3) and sha256-verified. Its
+fetched from a pinned engine release (v0.3.4) and sha256-verified. Its
 correctness floor is a full C++ port of the engine's golden-suite
 harness, run against the downloaded library on every CI leg.
 
@@ -28,7 +28,7 @@ every symbol underneath.
 | `fetch.sh` / `fetch.ps1` | Download the pinned release archive for the host platform, verify against the release's `checksums.txt` (sha256), extract into gitignored `deps/` |
 | `CMakeLists.txt` | Offline-first build consuming `deps/`; builds the library, the examples tour, the golden-suite port; installs a `find_package(corvid)` package |
 | `examples/{quickstart,hybrid,vector_index,text_search,graph,geo}.cpp` | The examples tour — one runnable program per concept (also ctests): the README quickstart, hybrid RRF+MMR, the vector-index families, BM25 incl. CJK + the phrase API, graph + delete cascade, geo radius/bbox/nearest |
-| `test/golden.cpp` | The golden-suite port — replays the engine's 267-line fixture suite (including the v0.3.0 map-keys and phrase ops; byte-identical at v0.3.3) against the downloaded libcorvid |
+| `test/golden.cpp` | The golden-suite port — replays the engine's 267-line fixture suite (including the v0.3.0 map-keys and phrase ops; byte-identical at v0.3.4) against the downloaded libcorvid |
 | `test/raii.cpp` | The RAII library's unit tests (145 checks): literals, initializer lists, `map_keys`, predicate builders, the fluent query, phrase search, exceptions, move semantics, TTL/graph/geo/schema/admin |
 | `test/errcodes.cpp` | The frozen error-code tables, pinned at compile time (the shipped header's and this library's mirror) |
 | `docs/PLAN.md` | The binding's plan: architecture ruling, binding rules, phase scope |
@@ -42,7 +42,7 @@ LTS system CMake), and one of `curl` + `shasum`/`sha256sum`
 (macOS/Linux) or PowerShell 5+ (Windows).
 
 ```sh
-./fetch.sh                     # download + verify corvid v0.3.3 into deps/
+./fetch.sh                     # download + verify corvid v0.3.4 into deps/
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ctest --test-dir build --output-on-failure   # golden suite + raii + examples
@@ -133,7 +133,7 @@ public header must carry no raw ABI tokens.
 ## Versioning
 
 The engine pin lives in one variable in the fetch scripts
-(`CORVID_VERSION=v0.3.3`). Artifacts are always taken from that exact
+(`CORVID_VERSION=v0.3.4`). Artifacts are always taken from that exact
 tag's GitHub release and sha256-verified; `deps/` is never committed.
 
 ## License

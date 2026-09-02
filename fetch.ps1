@@ -14,7 +14,7 @@
 $ErrorActionPreference = "Stop"
 
 # THE pin. Bump here and nowhere else.
-$CorvidVersion = "v0.3.3"
+$CorvidVersion = "v0.3.4"
 $Repo          = "corvid-db/corvid"
 
 $Root = $PSScriptRoot
