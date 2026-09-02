@@ -188,7 +188,11 @@ struct detail::Access {
             case Lit::Kind::Int: v = corvid_value_int(l.int_); break;
             case Lit::Kind::Float: v = corvid_value_float(l.float_); break;
             case Lit::Kind::Text:
-                v = corvid_value_text(l.text_.data(), l.text_.size());
+                // Same null-data() normalization as Value's string_view
+                // ctor: a default-constructed lit::Text is the legal
+                // empty text, not the ABI's null-pointer failure shape.
+                v = corvid_value_text(l.text_.data() != nullptr ? l.text_.data() : "",
+                                      l.text_.size());
                 break;
             case Lit::Kind::Bytes:
                 v = corvid_value_bytes(l.bytes_.data(), l.bytes_.size());
@@ -213,6 +217,32 @@ namespace {
 corvid_value* borrow_value(const Value& v) {
     return static_cast<corvid_value*>(detail::Access::handle(v));
 }
+
+// RAII sweep for the raw corvid_value handles the pred builders
+// materialize ahead of their engine call: a LATER literal can fail to
+// materialize (invalid UTF-8 Text throws mid-list), and the ones
+// already live must not leak out of the builder. The ABI CLONES the
+// values into the predicate tree (a failed build leaves them ours
+// too), so the sweep frees unconditionally — there is no release path.
+class ValueSweep {
+public:
+    ValueSweep() = default;
+    ValueSweep(const ValueSweep&) = delete;
+    ValueSweep& operator=(const ValueSweep&) = delete;
+    ~ValueSweep() {
+        for (corvid_value* v : held_) corvid_value_free(v);
+    }
+    void reserve(std::size_t n) { held_.reserve(n); }
+    corvid_value* push(corvid_value* v) {
+        held_.push_back(v);
+        return v;
+    }
+    std::size_t size() const noexcept { return held_.size(); }
+    const corvid_value* const* data() const noexcept { return held_.data(); }
+
+private:
+    std::vector<corvid_value*> held_;
+};
 
 }  // namespace
 
@@ -249,7 +279,11 @@ Value::Value(double d) {
 }
 
 Value::Value(std::string_view s) {
-    h_ = corvid_value_text(s.data(), s.size());
+    // A default-constructed string_view carries a null data() (size 0);
+    // the ABI reads a null pointer as its failure shape at ANY length,
+    // so normalize to the legal empty text — the same treatment the
+    // const char* ctor below gives nullptr.
+    h_ = corvid_value_text(s.data() != nullptr ? s.data() : "", s.size());
     check_not_null(h_);
 }
 
@@ -501,22 +535,28 @@ Predicate exists(std::string_view path) {
 }
 
 Predicate in(std::string_view path, std::initializer_list<Lit> values) {
-    std::vector<corvid_value*> owned;
+    // The whole list is materialized before the engine call, and a later
+    // Lit can throw there (invalid UTF-8 Text) — ValueSweep keeps every
+    // already-materialized handle freed on every path, including the
+    // throw (the ABI clones the values into the tree; a failed call
+    // leaves them ours).
+    ValueSweep owned;
     owned.reserve(values.size());
-    for (const Lit& l : values) owned.push_back(detail::Access::materialize(l));
-    std::vector<const corvid_value*> ptrs(owned.begin(), owned.end());
-    corvid_pred* p = corvid_pred_in(path.data(), path.size(), ptrs.data(), ptrs.size());
-    for (corvid_value* v : owned) corvid_value_free(v);  // CLONED into the tree
+    for (const Lit& l : values) owned.push(detail::Access::materialize(l));
+    corvid_pred* p =
+        corvid_pred_in(path.data(), path.size(), owned.data(), owned.size());
     check_not_null(p);
     return detail::Access::own_pred(p);
 }
 
 Predicate between(std::string_view path, Lit lo, Lit hi) {
-    corvid_value* a = detail::Access::materialize(lo);
-    corvid_value* b = detail::Access::materialize(hi);
+    // `hi` can fail to materialize (invalid UTF-8 Text) after `lo` is
+    // already live — the sweep frees both on every path, including the
+    // throw (the ABI clones the bounds; a failed call leaves them ours).
+    ValueSweep bounds;
+    corvid_value* a = bounds.push(detail::Access::materialize(lo));
+    corvid_value* b = bounds.push(detail::Access::materialize(hi));
     corvid_pred* p = corvid_pred_between(path.data(), path.size(), a, b);
-    corvid_value_free(a);
-    corvid_value_free(b);
     check_not_null(p);
     return detail::Access::own_pred(p);
 }

@@ -110,6 +110,15 @@ void test_values() {
     CHECK(Value("literal").as_text() == std::string("literal"));
     CHECK(Value(lit::text(std::string_view("sv"))).type() == Type::Text);
 
+    // A default-constructed string_view (null data(), size 0) is the
+    // LEGAL empty text, not InvalidArgument — the ctor normalizes the
+    // null pointer the ABI otherwise reads as its failure shape.
+    Value empty_text{std::string_view{}};
+    CHECK(empty_text.type() == Type::Text);
+    auto et = empty_text.as_text();
+    CHECK(et.has_value() && et->empty());
+    CHECK(Value(lit::Text{}).type() == Type::Text);
+
     // Builder mutations + the v0.3.0 map-key iterator.
     Value m = Value::empty_map();
     m.put("z", 1).put("键", 2).put("A1~B2", 3);
@@ -219,6 +228,17 @@ void test_predicates_and_queries() {
               .filter(pred::compare("n", Cmp::Eq, 4))
               .filter(pred::geo_within("loc", 0.0, 0.0, 1.0))  // composed tree
               .count() == 0);
+
+    // A literal that cannot materialize (invalid UTF-8 Text) AFTER
+    // valid entries must throw InvalidArgument AND leak nothing — the
+    // values materialized so far are freed on the throw path (the
+    // sanitizer/LSan CI leg over this file is the net that proves it).
+    const char bad_utf8[] = {'\xED', '\xA0'};  // truncated 3-byte sequence
+    const std::string_view bad{bad_utf8, sizeof bad};
+    EXPECT_THROWS(ErrorCode::InvalidArgument,
+                  pred::in("n", {1, 3, lit::text(bad)}));
+    EXPECT_THROWS(ErrorCode::InvalidArgument, pred::between("n", 1, lit::text(bad)));
+    EXPECT_THROWS(ErrorCode::InvalidArgument, pred::between("n", lit::text(bad), 3));
 
     // Aggregates (terminal — each consumes its builder).
     CHECK(docs.query().count() == 4);

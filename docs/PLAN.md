@@ -90,9 +90,18 @@ preprocessor selects its fixed-underlying-type branch (`enum X :
 uint32_t` + a same-name typedef), which is plain valid C++. The trick
 is scoped to the single `#include "corvid.h"` in each of the three ABIs
 touching TUs (`src/corvid.cpp`, `test/golden.cpp`, `test/errcodes.cpp`)
-and restored immediately after. If a future engine release adds a
-`__cplusplus` guard to the generated header, the prelude becomes a
-no-op — nothing else changes.
+and restored immediately after.
+
+**The prelude's removal is already scheduled:** the engine shipped the
+portable header in **v0.3.1** — the generated enums are the plain
+`typedef enum <tag> { ... } <tag>;` the spec shows, valid C11, C23, and
+every C++ standard (found by this binding; engine CHANGELOG 0.3.1).
+Plan of record: when the pin bumps to v0.3.1 or later, the
+C23-presenting prelude becomes dead code — a header that no longer
+branches on `__STDC_VERSION__` ignores it — so that same bump commit
+DELETES the prelude (and its twins in `test/golden.cpp` /
+`test/errcodes.cpp`) rather than carrying it as a vestige. Until the
+bump, it stays: the v0.3.0 artifact still needs it.
 
 ## Binding rules (from the master plan)
 
