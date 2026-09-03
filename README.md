@@ -9,7 +9,7 @@ API (`include/corvid/corvid.hpp`).
 
 The binding links the **published FFI artifacts** — the platform cdylib,
 `corvid.h`, and the golden fixtures shipped in each release archive —
-fetched from a pinned engine release (v0.4.0) and sha256-verified. Its
+fetched from a pinned engine release (v0.4.1) and sha256-verified. Its
 correctness floor is a full C++ port of the engine's golden-suite
 harness, run against the downloaded library on every CI leg.
 
@@ -30,7 +30,7 @@ LTS system CMake), and one of `curl` + `shasum`/`sha256sum`
 (macOS/Linux) or PowerShell 5+ (Windows).
 
 ```sh
-./fetch.sh                     # download + verify corvid v0.4.0 into deps/
+./fetch.sh                     # download + verify corvid v0.4.1 into deps/
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ctest --test-dir build --output-on-failure   # golden suite + raii + examples
@@ -121,7 +121,7 @@ public header must carry no raw ABI tokens.
 ## Versioning
 
 The engine pin lives in one variable in the fetch scripts
-(`CORVID_VERSION=v0.4.0`). Artifacts are always taken from that exact
+(`CORVID_VERSION=v0.4.1`). Artifacts are always taken from that exact
 tag's GitHub release and sha256-verified; `deps/` is never committed.
 
 ## License
