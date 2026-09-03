@@ -10,6 +10,7 @@ namespace {
 
 using namespace corvid;
 
+// docs:begin:text_search
 int run() {
     Db db = Db::open_memory();
     Collection docs = db.collection("docs");
@@ -67,6 +68,7 @@ int run() {
     }
     return 0;
 }
+// docs:end:text_search
 
 }  // namespace
 

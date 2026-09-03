@@ -10,6 +10,7 @@ namespace {
 
 using namespace corvid;
 
+// docs:begin:geo
 void put_place(Collection& docs, std::string_view key, std::string_view name,
                double lat, double lon) {
     docs.insert(key, Value::map({{"name", lit::text(name)},
@@ -66,6 +67,7 @@ int run() {
     std::printf("pred geo_within(50km) count: %zu\n", near_count);
     return 0;
 }
+// docs:end:geo
 
 }  // namespace
 

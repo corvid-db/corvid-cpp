@@ -10,6 +10,7 @@ namespace {
 
 using namespace corvid;
 
+// docs:begin:vector_index
 void put_doc(Collection& docs, std::string_view key, float a, float b,
              std::string_view tag) {
     const float v[]{a, b};
@@ -79,6 +80,7 @@ int run() {
     std::remove(path);
     return 0;
 }
+// docs:end:vector_index
 
 }  // namespace
 

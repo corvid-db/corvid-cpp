@@ -18,6 +18,7 @@ void expect(bool ok, const char* what) {
     }
 }
 
+// docs:begin:graph
 int run() {
     Db db = Db::open_memory();
     Collection docs = db.collection("docs");
@@ -71,6 +72,7 @@ int run() {
     std::printf("\n");
     return 0;
 }
+// docs:end:graph
 
 }  // namespace
 
